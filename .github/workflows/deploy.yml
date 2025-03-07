@@ -36,9 +36,9 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: ubuntu-24.04
+            runner: ubuntu-latest
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -172,7 +172,7 @@ jobs:
     needs: merge-manifests
     if: startsWith(github.event.ref, 'refs/tags/v')
     name: Notify release
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     steps:
       - name: Notify release
         run: |
@@ -182,7 +182,7 @@ jobs:
     needs: merge-manifests
     if: github.ref == 'refs/heads/develop'
     name: Deploy to ECS API Egov
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     environment:
       name: Staging-egov
       url: https://careapi.ohc.network
