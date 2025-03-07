@@ -27,16 +27,8 @@ env:
   CONTAINER_NAME_CRON: "care-celery-beat"
 
 jobs:
-  test:
-    name: Test
-    uses: ./.github/workflows/reusable-test.yml
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-    with:
-      event_name: ${{ github.event_name }}
 
   build:
-    needs: test
     name: Build ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
     strategy:
