@@ -82,6 +82,6 @@ jobs:
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
           ssh "$DEPLOY_USER"@"$DEPLOY_HOST" << 'EOF'
             cd /home/ubuntu/iac_tofu_template/deploy-backend
-            sed -i 's|image.*=.*"ghcr.io/ohcnetwork/care:.*"|image                = "ghcr.io/jesbinjoseph/care:latest-${{ github.run_number }}"|' locals.tf
+            sed -i 's|image.*=.*"ghcr.io/.*/care:.*"|image                = "ghcr.io/${{ github.repository }}:latest-${{ github.run_number }}"|' locals.tf
             make plan ENV=prod
           EOF
