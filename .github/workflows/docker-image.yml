@@ -62,3 +62,26 @@ jobs:
           build-args: |
             APP_VERSION=${{ github.sha }}
             ADDITIONAL_PLUGS=${{ env.ADDITIONAL_PLUGS }}
+
+  deploy:
+    name: Deploy to Infrastructure
+    runs-on: ubuntu-24.04
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment: production
+    steps:
+      - name: Update version and run terraform plan
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" << 'EOF'
+            cd /home/ubuntu/iac_tofu_template/deploy-backend
+            sed -i 's|image.*=.*"ghcr.io/ohcnetwork/care:.*"|image                = "ghcr.io/jesbinjoseph/care:latest-${{ github.run_number }}"|' locals.tf
+            make plan ENV=prod
+          EOF
