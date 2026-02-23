@@ -84,5 +84,5 @@ jobs:
             cd /home/ubuntu/iac_tofu_template/deploy-backend
             # sed -i 's|image.*=.*"ghcr.io/.*/care:.*"|image                = "ghcr.io/${{ github.repository }}:latest-${{ github.run_number }}"|' locals.tf
             hcledit attribute set locals.image '"ghcr.io/${{ github.repository }}:latest-${{ github.run_number }}"' -f locals.tf -u
-            make plan ENV=prod
+            make deploy ENV=prod
           EOF
