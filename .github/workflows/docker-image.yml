@@ -70,19 +70,19 @@ jobs:
     if: github.ref == 'refs/heads/develop'
     environment: production
     steps:
-      - name: Update version and run terraform plan
+      - name: Update version and run terraform
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" << 'EOF'
-            cd /home/ubuntu/iac_tofu_template/deploy-backend
-            # sed -i 's|image.*=.*"ghcr.io/.*/care:.*"|image                = "ghcr.io/${{ github.repository }}:latest-${{ github.run_number }}"|' locals.tf
+          ssh "$DEPLOY_USER"@"$DEPLOY_HOST" << EOF
+            cd $DEPLOY_PATH
             hcledit attribute set locals.image '"ghcr.io/${{ github.repository }}:latest-${{ github.run_number }}"' -f locals.tf -u
             make deploy ENV=prod
           EOF
