@@ -8,30 +8,6 @@ plugs = [
         version="@main",
         configs={},
     ),
-    Plug(
-        name="care_state_hmis",
-        package_name="git+https://github.com/10bedicu/care_state_hmis.git",
-        version="@main",
-        configs={},
-    ),
-    Plug(
-        name="abdm",
-        package_name="git+https://github.com/10bedicu/care_abdm.git",
-        version="@develop",
-        configs={},
-    ),
-    Plug(
-        name="nhcx",
-        package_name="git+https://github.com/ohcnetwork/care_nhcx.git",
-        version="@develop",
-        configs={},
-    ),
-    Plug(
-        name="care_scribe",
-        package_name="git+https://github.com/10bedicu/care_scribe.git",
-        version="@master",
-        configs={},
-    ),
 ]
 
 manager = PlugManager(plugs)
