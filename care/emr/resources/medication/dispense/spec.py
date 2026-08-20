@@ -12,6 +12,7 @@ from care.emr.models.medication_dispense import DispenseOrder, MedicationDispens
 from care.emr.models.medication_request import MedicationRequest
 from care.emr.resources.base import EMRResource
 from care.emr.resources.charge_item.spec import ChargeItemReadSpec
+from care.emr.resources.encounter.spec import EncounterSpecBase
 from care.emr.resources.inventory.inventory_item.spec import InventoryItemReadSpec
 from care.emr.resources.location.spec import FacilityLocationListSpec
 from care.emr.resources.medication.dispense.dispense_order import (
@@ -125,7 +126,7 @@ class MedicationDispenseWriteSpec(BaseMedicationDispenseSpec):
     location: UUID4
     authorizing_request: UUID4 | None = None
     item: UUID4
-    quantity: Decimal = Field(max_digits=20, decimal_places=0)
+    quantity: Decimal = Field(max_digits=20, decimal_places=0, ge=1)
     days_supply: Decimal | None = Field(default=None, max_digits=20, decimal_places=0)
     fully_dispensed: bool | None = None
     order: UUID4 | None = None
@@ -235,4 +236,9 @@ class MedicationDispenseReadSpec(BaseMedicationDispenseSpec):
 
 
 class MedicationDispenseRetrieveSpec(MedicationDispenseReadSpec):
-    pass
+    encounter: dict
+
+    @classmethod
+    def perform_extra_serialization(cls, mapping, obj):
+        super().perform_extra_serialization(mapping, obj)
+        mapping["encounter"] = EncounterSpecBase.serialize(obj.encounter).to_json()

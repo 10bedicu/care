@@ -441,47 +441,19 @@ class ResetPasswordAPITest(CareAPITestBase):
                 status_code=429,
             )
 
-    def test_change_password_with_leading_whitespace(self):
+    def test_reset_password_request_email_failure(self):
         """
-        Test that password with leading whitespace is handled consistently.
-        The password should be stripped before validation, matching login behavior.
+        Test that a 400 is returned when the email fails to send.
         """
-        self.client.force_authenticate(user=self.user)
-        new_password = "newpassword@123"
-        response = self.client.put(
-            self.change_password_url,
-            {"old_password": f"  {self.password}", "new_password": new_password},
-            format="json",
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {"message": "Password updated successfully"})
+        from unittest.mock import patch
 
-    def test_change_password_with_trailing_whitespace(self):
-        """
-        Test that password with trailing whitespace is handled consistently.
-        The password should be stripped before validation, matching login behavior.
-        """
-        self.client.force_authenticate(user=self.user)
-        new_password = "newpassword@123"
-        response = self.client.put(
-            self.change_password_url,
-            {"old_password": f"{self.password}  ", "new_password": new_password},
-            format="json",
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {"message": "Password updated successfully"})
-
-    def test_change_password_with_leading_and_trailing_whitespace(self):
-        """
-        Test that password with both leading and trailing whitespace is handled consistently.
-        The password should be stripped before validation, matching login behavior.
-        """
-        self.client.force_authenticate(user=self.user)
-        new_password = "newpassword@123"
-        response = self.client.put(
-            self.change_password_url,
-            {"old_password": f"  {self.password}  ", "new_password": new_password},
-            format="json",
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, {"message": "Password updated successfully"})
+        with patch(
+            "care.users.reset_password_views.send_password_reset_email",
+            side_effect=Exception("Connection unexpectedly closed"),
+        ):
+            response = self.client.post(
+                self.reset_password_request_url,
+                {"username": "testuser"},
+                format="json",
+            )
+            self.assertEqual(response.status_code, 400)

@@ -24,6 +24,7 @@ class QuestionnaireResponseFilters(filters.FilterSet):
     questionnaire_slug = filters.CharFilter(field_name="questionnaire__slug")
     form_submission = filters.UUIDFilter(field_name="form_submission__external_id")
     status = filters.CharFilter(field_name="status")
+    created_by = filters.UUIDFilter(field_name="created_by__external_id")
 
 
 class QuestionnaireResponseViewSet(EMRModelReadOnlyViewSet, EMRUpdateMixin):
@@ -46,6 +47,21 @@ class QuestionnaireResponseViewSet(EMRModelReadOnlyViewSet, EMRUpdateMixin):
             minutes=settings.QUESTIONNAIRE_ERRORED_TIME_LIMIT_MINUTES
         ):
             raise PermissionDenied("Questionnaire Response cannot be edited")
+        if model_instance.encounter and not AuthorizationController.call(
+            "can_submit_encounter_questionnaire_obj",
+            self.request.user,
+            model_instance.encounter,
+        ):
+            raise PermissionDenied(
+                "Permission Denied to update encounter questionnaire"
+            )
+        if not model_instance.encounter and not AuthorizationController.call(
+            "can_submit_questionnaire_patient_obj",
+            self.request.user,
+            model_instance.patient,
+        ):
+            raise PermissionDenied("Permission Denied to update patient questionnaire")
+
         return super().authorize_update(request_obj, model_instance)
 
     def get_queryset(self):

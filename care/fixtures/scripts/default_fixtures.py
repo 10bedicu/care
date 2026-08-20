@@ -8,6 +8,7 @@ from care.emr.resources.location.spec import (
     FacilityLocationModeChoices,
 )
 from care.emr.resources.organization.spec import OrganizationTypeChoices
+from care.fixtures.billing import load_billing
 from care.fixtures.constants import (
     DEFAULT_AVAILABILITY,
     FACILITY_DEPARTMENTS,
@@ -131,14 +132,34 @@ def load_fixtures(base):  # noqa: PLR0915, PLR0912
         patients.append(base.create_patient(geo_organization.id))
     log("Loading patients completed")
 
+    encounters = {}
     for patient in patients:
-        base.create_encounter(
+        encounters[patient.id] = base.create_encounter(
             patient.id,
             facility_id,
             organizations=[general_medicine.id],
             status=StatusChoices.in_progress.value,
         )
     log("Loading encounters completed")
+
+    admin_org = departments.get("Administration")
+    if admin_org:
+        for role_name in ("Facility Admin", "Nurse", "Staff"):
+            user = created_users.get(role_name)
+            role = roles.get(role_name)
+            if user and role:
+                base.add_user_to_facility_organization(
+                    facility_id, admin_org.id, user.id, role.id
+                )
+    log("Loading facility organization memberships completed")
+
+    base.create_facility(
+        geo_organization.id,
+        name="SECONDARY FACILITY",
+        facility_type="Private Hospital",
+        is_public=True,
+    )
+    log("Loading secondary facility completed")
 
     base.load_questionnaires_from_file([geo_organization.id])
     log("Loading questionnaires completed")
@@ -151,6 +172,9 @@ def load_fixtures(base):  # noqa: PLR0915, PLR0912
 
     load_inventory(base, facility_id, departments, suppliers, ward)
     log("Loading inventory completed")
+
+    load_billing(base, facility_id, patients, encounters)
+    log("Loading billing (accounts, charge items, invoices) completed")
 
     load_scheduling(base, facility_id, created_users, patients, departments, roles)
     log("Loading scheduling completed")
@@ -172,6 +196,7 @@ def load_fixtures(base):  # noqa: PLR0915, PLR0912
 
 def load_lab_definitions(base, facility_id, departments):
     laboratory = departments["Laboratory"]
+    administration = departments.get("Administration")
 
     lab_location = base.create_location(
         facility_id,
@@ -180,6 +205,11 @@ def load_lab_definitions(base, facility_id, departments):
         mode=FacilityLocationModeChoices.kind.value,
         organizations=[laboratory.id],
     )
+    base.add_organization_to_location(facility_id, lab_location.id, laboratory.id)
+    if administration:
+        base.add_organization_to_location(
+            facility_id, lab_location.id, administration.id
+        )
 
     lab_charge_category = base.create_resource_category(
         facility_id, "Lab Tests", "charge_item_definition"

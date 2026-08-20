@@ -20,7 +20,7 @@ from care.security.permissions.supply_delivery import SupplyDeliveryPermissions
 from care.utils.tests.base import CareAPITestBase
 
 
-class TestSupplyDeliveryViewSet(CareAPITestBase):
+class TestSupplyDeliveryViewSetBase(CareAPITestBase):
     def setUp(self):
         super().setUp()
         self.user = self.create_user(username="testuser")
@@ -40,6 +40,13 @@ class TestSupplyDeliveryViewSet(CareAPITestBase):
             ChargeItemDefinition,
             facility=self.facility,
             slug=f"f-{self.facility.external_id}-charge-item-definition",
+            price_components=[
+                {
+                    "amount": str(Decimal(100)),
+                    "monetary_component_type": "base",
+                    "factor": None,
+                }
+            ],
         )
         self.product = self.create_product(facility=self.facility)
 
@@ -201,6 +208,11 @@ class TestSupplyDeliveryViewSet(CareAPITestBase):
 
     # Testcases for create supply delivery
 
+
+class TestSupplyDeliveryViewSet(TestSupplyDeliveryViewSetBase):
+    def setUp(self):
+        super().setUp()
+
     def test_create_supply_delivery_internally_as_superuser(self):
         """
         Test creating a supply delivery internally as a superuser from origin to destination
@@ -316,10 +328,16 @@ class TestSupplyDeliveryViewSet(CareAPITestBase):
         Test creating a external supply delivery as a user with permissions
         """
         self.client.force_authenticate(user=self.user)
+        role = self.create_role_with_permissions(
+            permissions=[
+                SupplyDeliveryPermissions.can_read_supply_delivery.name,
+                SupplyDeliveryPermissions.can_write_external_supply_delivery.name,
+            ]
+        )
         self.attach_role_facility_organization_user(
             facility_organization=self.facility_organization,
             user=self.user,
-            role=self.role,
+            role=role,
         )
         data = self.create_supply_delivery_data(
             supplied_item=self.product.external_id,
@@ -356,6 +374,16 @@ class TestSupplyDeliveryViewSet(CareAPITestBase):
         Test creating a external supply delivery as a user without permissions
         """
         self.client.force_authenticate(user=self.user)
+        role = self.create_role_with_permissions(
+            permissions=[
+                SupplyDeliveryPermissions.can_read_supply_delivery.name,
+            ]
+        )
+        self.attach_role_facility_organization_user(
+            facility_organization=self.facility_organization,
+            user=self.user,
+            role=role,
+        )
         data = self.create_supply_delivery_data(
             supplied_item=self.product.external_id,
             order=self.delivery_order_destination_external.external_id,
@@ -564,10 +592,16 @@ class TestSupplyDeliveryViewSet(CareAPITestBase):
         Test updating an external supply delivery as a user with permissions
         """
         self.client.force_authenticate(user=self.user)
+        role = self.create_role_with_permissions(
+            permissions=[
+                SupplyDeliveryPermissions.can_read_supply_delivery.name,
+                SupplyDeliveryPermissions.can_write_external_supply_delivery.name,
+            ]
+        )
         self.attach_role_facility_organization_user(
             facility_organization=self.facility_organization,
             user=self.user,
-            role=self.role,
+            role=role,
         )
         supply_delivery = self.create_supply_delivery(
             order=self.delivery_order_destination_external,
@@ -626,6 +660,16 @@ class TestSupplyDeliveryViewSet(CareAPITestBase):
         Test updating an external supply delivery as a user without permissions
         """
         self.client.force_authenticate(user=self.user)
+        role = self.create_role_with_permissions(
+            permissions=[
+                SupplyDeliveryPermissions.can_read_supply_delivery.name,
+            ]
+        )
+        self.attach_role_facility_organization_user(
+            facility_organization=self.facility_organization,
+            user=self.user,
+            role=role,
+        )
         supply_delivery = self.create_supply_delivery(
             order=self.delivery_order_destination_external,
             supplied_item_quantity=Decimal(500),
